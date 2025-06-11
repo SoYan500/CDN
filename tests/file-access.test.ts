@@ -8,25 +8,26 @@ import {
 } from '../src/utils/file-access';
 
 describe('CDN Directory Restrictions', () => {
-  const testCDNDir = path.join(process.cwd(), 'cdn_files');
+  let testCDNDir: string;
+  let config: ReturnType<typeof createCDNConfig>;
   
   beforeAll(async () => {
-    // Ensure test CDN directory exists
+    // Create a unique test CDN directory
+    testCDNDir = path.join(process.cwd(), 'tests', 'cdn_test_files');
     await fs.mkdir(testCDNDir, { recursive: true });
+    
+    // Create configuration with the test directory
+    config = createCDNConfig({ rootDirectory: testCDNDir });
     
     // Create some test files
     await Promise.all([
       fs.writeFile(path.join(testCDNDir, 'test.txt'), 'Test content'),
-      fs.writeFile(path.join(testCDNDir, 'image.jpg'), 'Fake image data'),
-      fs.writeFile(path.join(testCDNDir, 'outside.txt'), 'Outside content', { 
-        mode: 0o755 
-      })
+      fs.writeFile(path.join(testCDNDir, 'image.jpg'), 'Fake image data')
     ]);
   });
 
   describe('isFileAccessAllowed', () => {
     it('should allow files within CDN directory', async () => {
-      const config = createCDNConfig();
       const testFilePath = path.join(testCDNDir, 'test.txt');
       
       const result = await isFileAccessAllowed(testFilePath, config);
@@ -34,7 +35,6 @@ describe('CDN Directory Restrictions', () => {
     });
 
     it('should reject files outside CDN directory', async () => {
-      const config = createCDNConfig();
       const outsideFilePath = path.join(process.cwd(), 'outside.txt');
       
       const result = await isFileAccessAllowed(outsideFilePath, config);
@@ -42,26 +42,25 @@ describe('CDN Directory Restrictions', () => {
     });
 
     it('should reject files with disallowed extensions', async () => {
-      const config = createCDNConfig({
+      const configWithRestrictions = createCDNConfig({
+        rootDirectory: testCDNDir,
         allowedFileExtensions: ['.txt']
       });
       const testFilePath = path.join(testCDNDir, 'image.jpg');
       
-      const result = await isFileAccessAllowed(testFilePath, config);
+      const result = await isFileAccessAllowed(testFilePath, configWithRestrictions);
       expect(result).toBe(false);
     });
   });
 
   describe('resolveCDNFilePath', () => {
     it('should resolve allowed file paths', async () => {
-      const config = createCDNConfig();
       const result = await resolveCDNFilePath('test.txt', config);
       
       expect(result).toBe(path.join(testCDNDir, 'test.txt'));
     });
 
     it('should return null for files outside CDN directory', async () => {
-      const config = createCDNConfig();
       const result = await resolveCDNFilePath('../outside.txt', config);
       
       expect(result).toBeNull();
