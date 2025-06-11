@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { safeReadFile, validateFilePath, FileAccessError } from '../src/file-access-error';
 import fs from 'fs/promises';
 import path from 'path';
