@@ -58,7 +58,7 @@ export async function resolveCDNFilePath(
   requestedPath: string, 
   config: CDNConfig
 ): Promise<string | null> {
-  const safePath = path.join(config.rootDirectory, requestedPath);
+  const safePath = path.normalize(path.join(config.rootDirectory, requestedPath));
   
   return await isFileAccessAllowed(safePath, config) 
     ? safePath 
